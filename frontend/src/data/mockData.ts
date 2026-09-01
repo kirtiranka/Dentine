@@ -1,0 +1,128 @@
+// data/mockData.ts
+import type { Patient } from '../types/patient';
+import type { Appointment } from '../types/appointment';
+
+export const initialPatients: Patient[] = [
+  {
+    id: 'pat-101',
+    firstName: 'Sarah',
+    lastName: 'Connor',
+    dateOfBirth: '1985-02-14',
+    phoneNumber: '(555) 234-5678',
+    email: 'sarah.c@example.com',
+    gender: 'female',
+    address: {
+      street: '742 Evergreen Terrace',
+      city: 'Springfield',
+      state: 'IL',
+      zipCode: '62704',
+    },
+    emergencyContact: {
+      name: 'John Connor',
+      relationship: 'Son',
+      phoneNumber: '(555) 987-6543',
+    },
+    medicalAlerts: [
+      {
+        id: 'alt-1',
+        type: 'allergy',
+        description: 'Penicillin Allergy',
+        severity: 'high',
+      },
+      {
+        id: 'alt-2',
+        type: 'condition',
+        description: 'Mild Hypertension',
+        severity: 'medium',
+      },
+    ],
+    insuranceProvider: 'Delta Dental Premier',
+    policyNumber: 'DD-98341102',
+    createdAt: '2026-01-10T10:00:00.000Z',
+    updatedAt: '2026-06-15T14:30:00.000Z',
+  },
+  {
+    id: 'pat-102',
+    firstName: 'Marcus',
+    lastName: 'Vance',
+    dateOfBirth: '1992-11-03',
+    phoneNumber: '(555) 876-5432',
+    email: 'mvance@example.com',
+    gender: 'male',
+    address: {
+      street: '120 Elmwood Ave',
+      city: 'Springfield',
+      state: 'IL',
+      zipCode: '62702',
+    },
+    medicalAlerts: [
+      {
+        id: 'alt-3',
+        type: 'allergy',
+        description: 'Latex Sensitivity',
+        severity: 'medium',
+      },
+    ],
+    insuranceProvider: 'MetLife Dental',
+    policyNumber: 'MET-445890',
+    createdAt: '2026-03-22T08:15:00.000Z',
+    updatedAt: '2026-03-22T08:15:00.000Z',
+  },
+  {
+    id: 'pat-103',
+    firstName: 'Elena',
+    lastName: 'Rostova',
+    dateOfBirth: '1978-07-29',
+    phoneNumber: '(555) 432-1098',
+    email: 'elena.rostova@example.com',
+    gender: 'female',
+    medicalAlerts: [],
+    insuranceProvider: 'Cigna Dental PPO',
+    policyNumber: 'CIG-1120984',
+    createdAt: '2026-05-01T11:45:00.000Z',
+    updatedAt: '2026-05-01T11:45:00.000Z',
+  },
+];
+
+// Reference timestamps aligned around the current week (Aug 2026)
+export const initialAppointments: Appointment[] = [
+  {
+    id: 'apt-201',
+    patientId: 'pat-101',
+    patientName: 'Sarah Connor',
+    dentistId: 'doc-1',
+    dentistName: 'Dr. Kirti Ranka, MDS',
+    startTime: '2026-08-24T09:00:00.000Z',
+    endTime: '2026-08-24T09:45:00.000Z',
+    status: 'confirmed',
+    treatmentType: 'cleaning',
+    operatoryNumber: 1,
+    notes: 'Routine bi-annual prophylaxis and full bitewings.',
+  },
+  {
+    id: 'apt-202',
+    patientId: 'pat-102',
+    patientName: 'Marcus Vance',
+    dentistId: 'doc-1',
+    dentistName: 'Dr. Kirti Ranka, MDS',
+    startTime: '2026-08-24T10:30:00.000Z',
+    endTime: '2026-08-24T11:30:00.000Z',
+    status: 'scheduled',
+    treatmentType: 'filling',
+    operatoryNumber: 2,
+    notes: 'Composite restoration on tooth #14 (MOD). Non-latex gloves required.',
+  },
+  {
+    id: 'apt-203',
+    patientId: 'pat-103',
+    patientName: 'Elena Rostova',
+    dentistId: 'doc-2',
+    dentistName: 'Dr. Kirti Ranka, MDS',
+    startTime: '2026-08-25T14:00:00.000Z',
+    endTime: '2026-08-25T15:00:00.000Z',
+    status: 'scheduled',
+    treatmentType: 'root-canal',
+    operatoryNumber: 1,
+    notes: 'Endodontic evaluation on lower right molar #30.',
+  },
+];
