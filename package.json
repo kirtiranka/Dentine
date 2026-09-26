@@ -1,0 +1,14 @@
+{
+    "name": "clinic-app-root",
+    "private": true,
+    "scripts": {
+        "db:link": "supabase link --project-ref nwxolzjldlrwdrbkseka",
+        "db:new": "supabase migration new",
+        "db:push": "supabase db push",
+        "db:pull": "supabase db pull",
+        "db:types": "supabase gen types typescript --project-id nwxolzjldlrwdrbkseka > frontend/src/types/database.types.ts"
+    },
+    "devDependencies": {
+        "supabase": "^2.117.0"
+    }
+}

@@ -1,72 +1,72 @@
-// App.tsx
 import React from 'react';
-import { useDentineStore } from './store/useDentineStore';
-import { PatientFinder } from './pages/PatientFinder';
-import { CalendarPage } from './pages/CalendarPage';
-import { PatientView } from './pages/PatientView';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-export const App: React.FC = () => {
-  const activeTab = useDentineStore((state) => state.activeTab);
-  const setActiveTab = useDentineStore((state) => state.setActiveTab);
-  const selectPatient = useDentineStore((state) => state.selectPatient);
-  const patientId = useDentineStore((state) => state.selectedPatientId)
+import { Layout } from './components/Layout';
+import { AllPatients } from './pages/AllPatients';
+import {
+  Dashboard,
+  Calendar,
+  Financials,
+  Admin,
+  // PatientProfile,
+} from './pages/Shells';
+import { LabTests } from './pages/LabTests';
+import { Prescriptions } from './pages/Prescriptions';
+import { PatientPage } from './pages/PatientPage';
+import { PatientDetails } from './pages/patient/PatientDetails';
+import { PatientVisitNotes } from './pages/patient/PatientVisitNotes';
+import { PatientTreatmentPlans } from './pages/patient/PatientTreatmentPlans';
+import { PatientLabTests } from './pages/patient/PatientLabTests';
+import { PatientPrescriptions } from './pages/patient/PatientPrescriptions';
+import { PatientDocuments } from './pages/patient/PatientDocuments';
+import { PatientTimeline} from './pages/patient/PatientSubPages';
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Keep data "fresh" for 1-2 minutes before triggering background refetches
+      staleTime: 1000 * 60 * 5, // 2 minutes
+
+      // Keep unused data in memory for 15 minutes
+      gcTime: 1000 * 60 * 15,
+
+      // Disable refetching on window focus (often annoying in desktop workflows)
+      refetchOnWindowFocus: false,
+
+      // Retry once instead of three times for faster UI error feedback
+      retry: 1,
+    },
+  },
+});
+
+export default function App() {
   return (
-    <div className="flex h-screen flex-col bg-slate-950 font-sans text-slate-100 antialiased">
-      {/* Global Topbar */}
-      <header className="flex h-14 items-center justify-between border-b border-slate-800 bg-slate-900 px-6">
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-black tracking-tight text-teal-400">🦷 DENTINE</span>
-          <span className="rounded bg-teal-950/80 border border-teal-800/60 px-1.5 py-0.5 text-[10px] font-bold text-teal-300 uppercase">
-            EMR
-          </span>
-        </div>
-
-        <nav className="flex space-x-1">
-          <button
-            onClick={(): void => {
-              selectPatient(null);
-              setActiveTab('finder');
-            }}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              activeTab === 'finder'
-                ? 'bg-teal-950/80 text-teal-300 border border-teal-800/60'
-                : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
-            }`}
-          >
-            Patients
-          </button>
-          <button
-            onClick={(): void => setActiveTab('calendar')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              activeTab === 'calendar'
-                ? 'bg-teal-950/80 text-teal-300 border border-teal-800/60'
-                : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
-            }`}
-          >
-            Calendar
-          </button>
-          <button
-            onClick={(): void => setActiveTab('patient-view')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              activeTab === 'patient-view'
-                ? 'bg-teal-950/80 text-teal-300 border border-teal-800/60'
-                : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
-            }`}
-          >
-            Chart
-          </button>
-        </nav>
-      </header>
-
-      {/* Main View Area */}
-      <main className="flex-1 overflow-auto bg-slate-950">
-        {activeTab === 'finder' && <PatientFinder />}
-        {activeTab === 'calendar' && <CalendarPage />}
-        {activeTab === 'patient-view' && <PatientView key={patientId}/>}
-      </main>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="calendar" element={<Calendar />} />
+            <Route path="patients" element={<AllPatients />} />
+            <Route path="patients/:id" element={<PatientPage />} >
+              <Route index element={<Navigate to="details" replace />} />
+              <Route path="details" element={<PatientDetails />} />
+              <Route path="timeline" element={<PatientTimeline />} />
+              <Route path="visit-notes" element={<PatientVisitNotes />} />
+              <Route path="treatment-plans" element={<PatientTreatmentPlans />} />
+              <Route path="lab-tests" element={<PatientLabTests />} />
+              <Route path="prescriptions" element={<PatientPrescriptions />} />
+              <Route path="documents" element={<PatientDocuments />} />
+            </Route>
+            <Route path="lab-tests" element={<LabTests />} />
+            <Route path="prescriptions" element={<Prescriptions />} />
+            <Route path="financials" element={<Financials />} />
+            <Route path="admin" element={<Admin />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
-};
-
-export default App;
+}

@@ -25,11 +25,11 @@ export interface Appointment {
   patientName: string; // Denormalized for fast calendar rendering
   dentistId: string;
   dentistName: string;
-  startTime: string; // ISO 8601: '2026-08-24T09:00:00.000Z'
-  endTime: string;   // ISO 8601: '2026-08-24T09:45:00.000Z'
+  date: string;
+  time: string;
+  duration: number;
   status: AppointmentStatus;
-  treatmentType: TreatmentType;
-  operatoryNumber?: number; // Dental chair / room #
+  procedure: string;
   notes?: string;
 }
 

@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useDentineStore } from '../store/useDentineStore';
 import type { Appointment } from '../types/appointment';
 import { AppointmentModal } from '../components/AppointmentModal';
+import { add } from 'date-fns';
+import { useAppointments } from '../hooks/useAppointmentQueries';
 
 const START_HOUR = 8; // 8:00 AM
 const END_HOUR = 18;  // 6:00 PM
@@ -19,7 +21,7 @@ const PROCEDURE_COLORS: Record<string, string> = {
 };
 
 export const CalendarPage: React.FC = () => {
-  const appointments = useDentineStore((state) => state.appointments);
+  const {data: appointments = []} = useAppointments()
   const selectPatient = useDentineStore((state) => state.selectPatient);
 
   // Default to Monday of current reference week (e.g. Aug 24, 2026)
@@ -131,7 +133,7 @@ export const CalendarPage: React.FC = () => {
             Time
           </div>
           {weekDays.map((day: Date) => {
-            console.log(day.toISOString(), day.toLocaleDateString('en-IN', { month: 'numeric', day: 'numeric' }));
+            // console.log(day.toISOString(), day.toLocaleDateString('en-IN', { month: 'numeric', day: 'numeric' }));
             return (
             <div
               key={day.toISOString()}
@@ -168,7 +170,7 @@ export const CalendarPage: React.FC = () => {
 
             // Filter appointments for this day
             const dayAppointments = appointments.filter((apt: Appointment) => {
-              const aptDate = apt.startTime.split('T')[0];
+              const aptDate = apt.date
               return aptDate === dateStr;
             });
 
@@ -189,8 +191,8 @@ export const CalendarPage: React.FC = () => {
 
                 {/* Render Appointment Cards Absolute to the Day Column */}
                 {dayAppointments.map((apt: Appointment) => {
-                  const start = new Date(apt.startTime);
-                  const end = new Date(apt.endTime);
+                  const start = new Date(`${apt.date}T${apt.time}`);
+                  const end = add(start, {minutes:apt.duration})
 
                   const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes();
                   const durationMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
@@ -200,7 +202,7 @@ export const CalendarPage: React.FC = () => {
                   const height = (durationMinutes / 30) * SLOT_HEIGHT_PX;
 
                   const colorClass =
-                    PROCEDURE_COLORS[apt.treatmentType] ||
+                    PROCEDURE_COLORS[apt.procedure] ||
                     'bg-slate-800 border-l-4 border-slate-600 text-slate-100';
 
                   return (
@@ -215,14 +217,6 @@ export const CalendarPage: React.FC = () => {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-semibold truncate text-slate-100">{apt.patientName}</span>
-                        {apt.operatoryNumber && (
-                          <span className="rounded bg-black/40 px-1 text-[10px] font-mono font-medium text-slate-200">
-                            Op {apt.operatoryNumber}
-                          </span>
-                        )}
-                      </div>
-                      <div className="capitalize text-[11px] text-slate-300 opacity-90 truncate">
-                        {apt.treatmentType.replace('-', ' ')}
                       </div>
                       {height >= 50 && (
                         <div className="text-[10px] text-slate-400 font-mono truncate mt-0.5">
@@ -246,6 +240,7 @@ export const CalendarPage: React.FC = () => {
         onClose={(): void => setModalOpen(false)}
         defaultDate={selectedSlot.date}
         defaultTime={selectedSlot.time}
+        defaultPatientId={""}
       />
     </div>
   );

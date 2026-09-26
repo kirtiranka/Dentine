@@ -1,113 +1,236 @@
+// src/pages/PatientView.tsx
 import React, { useState } from 'react';
 import { useDentineStore } from '../store/useDentineStore';
-import type { Patient, MedicalAlert } from '../types/patient';
+import {
+  usePatientById,
+  useSavePatient,
+  useDeletePatient,
+} from '../hooks/useMedicalQueries';
+import { useAppointments } from '../hooks/useAppointmentQueries';
+import type { Patient, MedicalAlert, PatientDetails } from '../types/patient';
 import type { Appointment } from '../types/appointment';
 import { AppointmentModal } from '../components/AppointmentModal';
 import { getNearestNonSundayDate } from '../scripts/utils';
 
 export const PatientView: React.FC = () => {
+  // Navigation / Selected ID retained from Zustand UI store
   const selectedPatientId = useDentineStore((state) => state.selectedPatientId);
-  const getPatientById = useDentineStore((state) => state.getPatientById);
-  const updatePatient = useDentineStore((state) => state.updatePatient);
-  const deletePatient = useDentineStore((state) => state.deletePatient);
   const selectPatient = useDentineStore((state) => state.selectPatient);
-  const appointments = useDentineStore((state) => state.appointments);
 
-  const patient = selectedPatientId ? getPatientById(selectedPatientId) : undefined;
+  // --- TanStack Queries & Mutations ---
+  const {
+    data: patient,
+    isLoading: isPatientLoading,
+    error: patientError,
+  } = usePatientById(selectedPatientId ?? '');
+  const { mutate: savePatient, isPending: isSaving } = useSavePatient();
+  const { mutate: deletePatient, isPending: isDeleting } = useDeletePatient();
+  const { data: appointments = [] } = useAppointments();
 
-  // Edit Mode & Local Form State
+  // --- Local UI State ---
   const [isEditing, setIsEditing] = useState<boolean>(false);
-//   const [prevPatientId, setPrevPatientId] = useState(patient?.id);
-  const [formData, setFormData] = useState<Patient | null>(patient ?? null);
+  const [editFormData, setEditFormData] = useState<Partial<Patient> | null>(null);
 
-  // New Medical Alert inline inputs
+  // Alert builder inputs
   const [newAlertDesc, setNewAlertDesc] = useState<string>('');
-  const [newAlertSeverity, setNewAlertSeverity] = useState<'low' | 'medium' | 'high'>('high');
+  const [newAlertSeverity, setNewAlertSeverity] = useState<MedicalAlert['severity']>('high');
 
-  // Appointment Modal state
+  // Appointment Modal
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState<boolean>(false);
 
-//   if (patient?.id !== prevPatientId) {
-//     setPrevPatientId(patient?.id);
-//     setFormData(patient ?? null);
-//   }
-
-  if (!patient || !formData) {
+  // 1. Empty / Unselected State
+  if (!selectedPatientId) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-slate-950 p-6 text-center text-slate-100">
-      <div className="rounded-full bg-slate-900 border border-slate-800 p-4 text-3xl mb-3 shadow-inner">
-        📁
+        <div className="rounded-full bg-slate-900 border border-slate-800 p-4 text-3xl mb-3 shadow-inner">
+          📁
+        </div>
+        <h2 className="text-lg font-semibold text-slate-100">No Patient Chart Selected</h2>
+        <p className="text-sm text-slate-400 max-w-sm mt-1 mb-4">
+          Select a patient from the directory or calendar to open their clinical record.
+        </p>
+        <button
+          onClick={(): void => selectPatient(null)}
+          className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-teal-500 active:bg-teal-700 transition-colors"
+        >
+          Open Patient Directory
+        </button>
       </div>
-      <h2 className="text-lg font-semibold text-slate-100">No Patient Chart Selected</h2>
-      <p className="text-sm text-slate-400 max-w-sm mt-1 mb-4">
-        Select a patient from the directory or calendar to open their clinical record.
-      </p>
-      <button
-        onClick={(): void => selectPatient(null)}
-        className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-teal-500 active:bg-teal-700 transition-colors"
-      >
-        Open Patient Directory
-      </button>
-    </div>
     );
   }
 
-  // Filter appointments for this specific patient
+  // 2. Loading State
+  if (isPatientLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950 text-slate-400 text-sm">
+        Loading patient record...
+      </div>
+    );
+  }
+
+  // 3. Not Found or Error State
+  if (!patient || patientError) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-slate-950 p-6 text-center text-slate-100">
+        <p className="text-rose-400 text-sm mb-4">Failed to load patient details.</p>
+        <button
+          onClick={(): void => selectPatient(null)}
+          className="rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800"
+        >
+          ← Return to Directory
+        </button>
+      </div>
+    );
+  }
+
+  // Fallback to active DB record if edit form is not primed
+  const activeData: Patient = (editFormData as Patient) ?? patient;
+  const details: PatientDetails = activeData.details ?? {};
+  const currentAlerts: MedicalAlert[] = details.medicalAlerts ?? [];
+
+  // Filter appointments for this patient
   const patientAppointments = appointments.filter(
     (apt: Appointment) => apt.patientId === patient.id
   );
+
+  // --- Handlers ---
+  const handleStartEdit = (): void => {
+    setEditFormData(patient);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = (): void => {
+    setEditFormData(null);
+    setIsEditing(false);
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ): void => {
     const { name, value } = e.target;
-    setFormData((prev) => (prev ? { ...prev, [name]: value } : null));
+    setEditFormData((prev) => (prev ? { ...prev, [name]: value } : patient));
   };
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
-    setFormData((prev) =>
-      prev
-        ? {
-            ...prev,
-            address: {
-              street: prev.address?.street || '',
-              city: prev.address?.city || '',
-              state: prev.address?.state || '',
-              zipCode: prev.address?.zipCode || '',
-              [name]: value,
-            },
-          }
-        : null
-    );
+    setEditFormData((prev) => {
+      const base = prev ?? patient;
+      const prevDetails = base.details ?? {};
+      const prevAddress = prevDetails.address ?? { street: '', city: '', state: '', zipCode: '' };
+
+      return {
+        ...base,
+        details: {
+          ...prevDetails,
+          address: {
+            ...prevAddress,
+            [name]: value,
+          },
+        },
+      };
+    });
+  };
+
+  const handleInsuranceChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => {
+      const base = prev ?? patient;
+      const prevDetails = base.details ?? {};
+      const prevInsurance = prevDetails.insurance ?? { provider: '', policyNumber: '' };
+
+      return {
+        ...base,
+        details: {
+          ...prevDetails,
+          insurance: {
+            ...prevInsurance,
+            [name]: value,
+          },
+        },
+      };
+    });
   };
 
   const handleSave = (e: React.FormEvent): void => {
     e.preventDefault();
-    if (!formData) return;
-    updatePatient(patient.id, formData);
-    setIsEditing(false);
+    if (!editFormData) return;
+
+    savePatient(
+      {
+        id: patient.id,
+        name: editFormData.name ?? patient.name,
+        dateOfBirth: editFormData.dateOfBirth ?? patient.dateOfBirth,
+        phoneNumber: editFormData.phoneNumber ?? patient.phoneNumber,
+        email: editFormData.email,
+        details: editFormData.details,
+      },
+      {
+        onSuccess: () => {
+          setIsEditing(false);
+          setEditFormData(null);
+        },
+      }
+    );
   };
 
   const handleAddAlert = (): void => {
     if (!newAlertDesc.trim()) return;
+
     const newAlert: MedicalAlert = {
-      id: `alt-${Date.now()}`,
+      id: crypto.randomUUID(),
       type: 'allergy',
       description: newAlertDesc.trim(),
       severity: newAlertSeverity,
     };
-    const updatedAlerts = [...(formData.medicalAlerts || []), newAlert];
-    setFormData({ ...formData, medicalAlerts: updatedAlerts });
-    updatePatient(patient.id, { medicalAlerts: updatedAlerts });
+
+    const updatedAlerts = [...currentAlerts, newAlert];
+    const updatedDetails: PatientDetails = {
+      ...details,
+      medicalAlerts: updatedAlerts,
+    };
+
+    savePatient({
+      id: patient.id,
+      name: patient.name,
+      dateOfBirth: patient.dateOfBirth,
+      phoneNumber: patient.phoneNumber,
+      email: patient.email,
+      details: updatedDetails,
+    });
+
     setNewAlertDesc('');
   };
 
   const handleRemoveAlert = (alertId: string): void => {
-    const updatedAlerts = (formData.medicalAlerts || []).filter((a) => a.id !== alertId);
-    setFormData({ ...formData, medicalAlerts: updatedAlerts });
-    updatePatient(patient.id, { medicalAlerts: updatedAlerts });
+    const updatedAlerts = currentAlerts.filter((a) => a.id !== alertId);
+    const updatedDetails: PatientDetails = {
+      ...details,
+      medicalAlerts: updatedAlerts,
+    };
+
+    savePatient({
+      id: patient.id,
+      name: patient.name,
+      dateOfBirth: patient.dateOfBirth,
+      phoneNumber: patient.phoneNumber,
+      email: patient.email,
+      details: updatedDetails,
+    });
   };
+
+  const handleDelete = (): void => {
+    if (confirm(`Are you sure you want to delete the clinical chart for ${patient.name}?`)) {
+      deletePatient(patient.id, {
+        onSuccess: () => selectPatient(null),
+      });
+    }
+  };
+
+  const nameParts = patient.name.trim().split(' ');
+  const initials =
+    nameParts.length > 1
+      ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`
+      : nameParts[0]?.slice(0, 2) ?? 'PT';
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 lg:p-10 text-slate-100">
@@ -124,7 +247,7 @@ export const PatientView: React.FC = () => {
             {!isEditing ? (
               <button
                 type="button"
-                onClick={(): void => setIsEditing(true)}
+                onClick={handleStartEdit}
                 className="rounded-lg border border-slate-700 bg-slate-800/80 px-4 py-2 text-xs font-medium text-slate-200 shadow-xs hover:bg-slate-700 transition-colors"
               >
                 ✏️ Edit Details
@@ -132,10 +255,7 @@ export const PatientView: React.FC = () => {
             ) : (
               <button
                 type="button"
-                onClick={(): void => {
-                  setFormData(patient);
-                  setIsEditing(false);
-                }}
+                onClick={handleCancelEdit}
                 className="rounded-lg border border-slate-700 bg-slate-800/80 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700 transition-colors"
               >
                 Cancel
@@ -154,36 +274,36 @@ export const PatientView: React.FC = () => {
         <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-950/80 text-xl font-bold text-teal-300 border border-teal-800/60">
-                {patient.firstName[0]}
-                {patient.lastName[0]}
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-950/80 text-xl font-bold text-teal-300 border border-teal-800/60 uppercase">
+                {initials}
               </div>
               <div>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-bold text-slate-100">
-                    {patient.firstName} {patient.lastName}
-                  </h1>
+                  <h1 className="text-2xl font-bold text-slate-100">{patient.name}</h1>
                   <span className="rounded bg-slate-800 px-2 py-0.5 font-mono text-xs font-medium text-slate-300 uppercase border border-slate-700/60">
-                    ID: {patient.id}
+                    ID: {patient.id.slice(0, 8)}
                   </span>
                 </div>
                 <div className="mt-1 flex flex-wrap gap-4 text-xs text-slate-400">
-                  <span>DOB: <strong className="text-slate-200">{patient.dateOfBirth}</strong></span>
-                  <span>Phone: <strong className="text-slate-200">{patient.phoneNumber}</strong></span>
-                  <span>Email: <strong className="text-slate-200">{patient.email || 'None'}</strong></span>
+                  <span>
+                    DOB: <strong className="text-slate-200">{patient.dateOfBirth}</strong>
+                  </span>
+                  <span>
+                    Phone: <strong className="text-slate-200">{patient.phoneNumber}</strong>
+                  </span>
+                  <span>
+                    Email: <strong className="text-slate-200">{patient.email || 'None'}</strong>
+                  </span>
                 </div>
               </div>
             </div>
 
             <button
-              onClick={(): void => {
-                if (confirm(`Are you sure you want to delete ${patient.firstName}'s chart?`)) {
-                  deletePatient(patient.id);
-                }
-              }}
-              className="text-xs text-rose-400 hover:text-rose-300 self-start sm:self-center transition-colors"
+              disabled={isDeleting}
+              onClick={handleDelete}
+              className="text-xs text-rose-400 hover:text-rose-300 self-start sm:self-center transition-colors disabled:opacity-50"
             >
-              Delete Chart
+              {isDeleting ? 'Deleting...' : 'Delete Chart'}
             </button>
           </div>
         </div>
@@ -194,22 +314,25 @@ export const PatientView: React.FC = () => {
             <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400">
               ⚠️ Medical Alerts & Clinical Precautions
             </h3>
-            <span className="text-xs text-amber-300/80">Always confirm before administering anesthesia</span>
+            <span className="text-xs text-amber-300/80">Always confirm before treatment</span>
           </div>
 
           <div className="flex flex-wrap gap-2 items-center">
-            {(formData.medicalAlerts || []).length === 0 ? (
+            {currentAlerts.length === 0 ? (
               <span className="text-xs text-slate-400 italic">No medical alerts recorded for this patient.</span>
             ) : (
-              formData.medicalAlerts?.map((alert) => (
+              currentAlerts.map((alert) => (
                 <div
                   key={alert.id}
                   className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold ${
                     alert.severity === 'high'
                       ? 'bg-rose-950/80 border border-rose-800/80 text-rose-300'
-                      : 'bg-amber-950/80 border border-amber-800/80 text-amber-300'
+                      : alert.severity === 'medium'
+                      ? 'bg-amber-950/80 border border-amber-800/80 text-amber-300'
+                      : 'bg-blue-950/80 border border-blue-800/80 text-blue-300'
                   }`}
                 >
+                  <span className="text-[10px] uppercase font-mono">[{alert.type}]</span>
                   <span>{alert.description}</span>
                   <button
                     onClick={(): void => handleRemoveAlert(alert.id)}
@@ -233,7 +356,9 @@ export const PatientView: React.FC = () => {
             />
             <select
               value={newAlertSeverity}
-              onChange={(e): void => setNewAlertSeverity(e.target.value as 'low' | 'medium' | 'high')}
+              onChange={(e): void =>
+                setNewAlertSeverity(e.target.value as MedicalAlert['severity'])
+              }
               className="rounded-md border border-amber-900/60 bg-slate-900/80 px-2 py-1 text-xs text-slate-200 outline-none focus:border-amber-500 transition-colors"
             >
               <option value="high" className="bg-slate-900 text-slate-100">High Severity</option>
@@ -259,24 +384,13 @@ export const PatientView: React.FC = () => {
               </h2>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">First Name</label>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Full Name</label>
                   <input
                     disabled={!isEditing}
                     type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-teal-500 disabled:bg-slate-900/80 disabled:border-slate-800 disabled:text-slate-400 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Last Name</label>
-                  <input
-                    disabled={!isEditing}
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
+                    name="name"
+                    value={activeData.name}
                     onChange={handleInputChange}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-teal-500 disabled:bg-slate-900/80 disabled:border-slate-800 disabled:text-slate-400 transition-colors"
                   />
@@ -290,7 +404,7 @@ export const PatientView: React.FC = () => {
                     disabled={!isEditing}
                     type="date"
                     name="dateOfBirth"
-                    value={formData.dateOfBirth}
+                    value={activeData.dateOfBirth}
                     onChange={handleInputChange}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500 disabled:bg-slate-900/80 disabled:border-slate-800 disabled:text-slate-400 [color-scheme:dark] transition-colors"
                   />
@@ -300,14 +414,26 @@ export const PatientView: React.FC = () => {
                   <select
                     disabled={!isEditing}
                     name="gender"
-                    value={formData.gender}
-                    onChange={handleInputChange}
+                    value={details.gender || ''}
+                    onChange={(e) => {
+                      const val = e.target.value as PatientDetails['gender'];
+                      setEditFormData((prev) => {
+                        const base = prev ?? patient;
+                        return {
+                          ...base,
+                          details: {
+                            ...(base.details ?? {}),
+                            gender: val || undefined,
+                          },
+                        };
+                      });
+                    }}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500 disabled:bg-slate-900/80 disabled:border-slate-800 disabled:text-slate-400 transition-colors"
                   >
-                    <option value="undisclosed" className="bg-slate-900 text-slate-100">Undisclosed</option>
-                    <option value="female" className="bg-slate-900 text-slate-100">Female</option>
-                    <option value="male" className="bg-slate-900 text-slate-100">Male</option>
-                    <option value="other" className="bg-slate-900 text-slate-100">Other</option>
+                    <option value="">Select Gender</option>
+                    <option value="female" className="bg-slate-900">Female</option>
+                    <option value="male" className="bg-slate-900">Male</option>
+                    <option value="other" className="bg-slate-900">Other</option>
                   </select>
                 </div>
               </div>
@@ -319,7 +445,7 @@ export const PatientView: React.FC = () => {
                     disabled={!isEditing}
                     type="tel"
                     name="phoneNumber"
-                    value={formData.phoneNumber}
+                    value={activeData.phoneNumber}
                     onChange={handleInputChange}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-teal-500 disabled:bg-slate-900/80 disabled:border-slate-800 disabled:text-slate-400 transition-colors"
                   />
@@ -330,7 +456,7 @@ export const PatientView: React.FC = () => {
                     disabled={!isEditing}
                     type="email"
                     name="email"
-                    value={formData.email || ''}
+                    value={activeData.email || ''}
                     onChange={handleInputChange}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-teal-500 disabled:bg-slate-900/80 disabled:border-slate-800 disabled:text-slate-400 transition-colors"
                   />
@@ -344,7 +470,7 @@ export const PatientView: React.FC = () => {
                   disabled={!isEditing}
                   type="text"
                   name="street"
-                  value={formData.address?.street || ''}
+                  value={details.address?.street || ''}
                   onChange={handleAddressChange}
                   className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-teal-500 disabled:bg-slate-900/80 disabled:border-slate-800 disabled:text-slate-400 transition-colors"
                 />
@@ -357,7 +483,7 @@ export const PatientView: React.FC = () => {
                     disabled={!isEditing}
                     type="text"
                     name="city"
-                    value={formData.address?.city || ''}
+                    value={details.address?.city || ''}
                     onChange={handleAddressChange}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-teal-500 disabled:bg-slate-900/80 disabled:border-slate-800 disabled:text-slate-400 transition-colors"
                   />
@@ -368,7 +494,7 @@ export const PatientView: React.FC = () => {
                     disabled={!isEditing}
                     type="text"
                     name="state"
-                    value={formData.address?.state || ''}
+                    value={details.address?.state || ''}
                     onChange={handleAddressChange}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-teal-500 disabled:bg-slate-900/80 disabled:border-slate-800 disabled:text-slate-400 transition-colors"
                   />
@@ -379,7 +505,7 @@ export const PatientView: React.FC = () => {
                     disabled={!isEditing}
                     type="text"
                     name="zipCode"
-                    value={formData.address?.zipCode || ''}
+                    value={details.address?.zipCode || ''}
                     onChange={handleAddressChange}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-teal-500 disabled:bg-slate-900/80 disabled:border-slate-800 disabled:text-slate-400 font-mono transition-colors"
                   />
@@ -398,9 +524,9 @@ export const PatientView: React.FC = () => {
                   <input
                     disabled={!isEditing}
                     type="text"
-                    name="insuranceProvider"
-                    value={formData.insuranceProvider || ''}
-                    onChange={handleInputChange}
+                    name="provider"
+                    value={details.insurance?.provider || ''}
+                    onChange={handleInsuranceChange}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-teal-500 disabled:bg-slate-900/80 disabled:border-slate-800 disabled:text-slate-400 transition-colors"
                   />
                 </div>
@@ -410,8 +536,8 @@ export const PatientView: React.FC = () => {
                     disabled={!isEditing}
                     type="text"
                     name="policyNumber"
-                    value={formData.policyNumber || ''}
-                    onChange={handleInputChange}
+                    value={details.insurance?.policyNumber || ''}
+                    onChange={handleInsuranceChange}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-teal-500 disabled:bg-slate-900/80 disabled:border-slate-800 disabled:text-slate-400 font-mono transition-colors"
                   />
                 </div>
@@ -422,16 +548,18 @@ export const PatientView: React.FC = () => {
               <div className="flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={(): void => setIsEditing(false)}
+                  disabled={isSaving}
+                  onClick={handleCancelEdit}
                   className="rounded-lg px-5 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 active:bg-teal-700 transition-colors"
+                  disabled={isSaving}
+                  className="rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 active:bg-teal-700 disabled:opacity-50 transition-colors"
                 >
-                  Save Changes
+                  {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             )}
@@ -460,15 +588,14 @@ export const PatientView: React.FC = () => {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-semibold capitalize text-slate-200">
-                          {apt.treatmentType.replace('-', ' ')}
+                          {apt.procedure.replace('-', ' ')}
                         </span>
                         <span className="rounded bg-teal-950/80 border border-teal-800/60 px-1.5 py-0.5 text-[10px] font-medium text-teal-300 uppercase">
                           {apt.status}
                         </span>
                       </div>
                       <div className="text-slate-400 font-mono">
-                        {new Date(apt.startTime).toLocaleDateString()} at{' '}
-                        {new Date(apt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {apt.date} at {apt.time} ({apt.duration} mins)
                       </div>
                       <div className="text-slate-400 text-[11px]">Provider: {apt.dentistName}</div>
                       {apt.notes && (
@@ -491,6 +618,7 @@ export const PatientView: React.FC = () => {
         onClose={(): void => setIsAppointmentModalOpen(false)}
         defaultDate={getNearestNonSundayDate()}
         defaultTime="09:00"
+        defaultPatientId={patient.id}
       />
     </div>
   );
