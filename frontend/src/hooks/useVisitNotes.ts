@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { VisitNote, VisitNoteDetails } from '../types/visitNote';
+import type { Json } from '../types/database.types';
 
 export function useVisitNotes(patientId: string | undefined) {
   return useQuery({
@@ -29,7 +30,6 @@ export function useVisitNotes(patientId: string | undefined) {
 
 export function useCreateVisitNote(patientId: string) {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({
       clinicId,
@@ -46,8 +46,7 @@ export function useCreateVisitNote(patientId: string) {
           clinic_id: clinicId,
           patient_id: patientId,
           doctor_id: doctorId || null,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          details: details as any,
+          details: details as Json,
         })
         .select()
         .single();
@@ -57,6 +56,7 @@ export function useCreateVisitNote(patientId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visit_notes', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['patient_timeline', patientId] });
     },
   });
 }
@@ -75,8 +75,7 @@ export function useUpdateVisitNote(patientId: string) {
       const { data, error } = await supabase
         .from('visit_note')
         .update({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          details: details as any,
+          details: details as Json,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
@@ -88,6 +87,7 @@ export function useUpdateVisitNote(patientId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visit_notes', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['patient_timeline', patientId] });
     },
   });
 }

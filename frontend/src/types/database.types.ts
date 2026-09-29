@@ -41,38 +41,58 @@ export type Database = {
     Tables: {
       action_log: {
         Row: {
-          action_payload: Json
-          action_type: string
-          asof_time: string
+          action: string
+          actor_id: string | null
           clinic_id: string
           created_at: string
+          details: Json
+          entity_id: string
+          entity_type: string
           id: string
-          updated_at: string
+          patient_id: string
         }
         Insert: {
-          action_payload?: Json
-          action_type: string
-          asof_time?: string
+          action: string
+          actor_id?: string | null
           clinic_id: string
           created_at?: string
+          details?: Json
+          entity_id: string
+          entity_type: string
           id?: string
-          updated_at?: string
+          patient_id: string
         }
         Update: {
-          action_payload?: Json
-          action_type?: string
-          asof_time?: string
+          action?: string
+          actor_id?: string | null
           clinic_id?: string
           created_at?: string
+          details?: Json
+          entity_id?: string
+          entity_type?: string
           id?: string
-          updated_at?: string
+          patient_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "action_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "employee"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "action_log_clinic_id_fkey"
             columns: ["clinic_id"]
             isOneToOne: false
             referencedRelation: "clinic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_log_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient"
             referencedColumns: ["id"]
           },
         ]

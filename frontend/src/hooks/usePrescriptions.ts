@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { Prescription, PrescriptionDetails } from '../types/prescription';
+import type { Json } from '../types/database.types';
 
 export function usePrescriptions(patientId: string | undefined) {
   return useQuery({
@@ -46,8 +47,7 @@ export function useCreatePrescription(patientId: string) {
           clinic_id: clinicId,
           patient_id: patientId,
           doctor_id: doctorId || null,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          details: details as any,
+          details: details as Json,
         })
         .select()
         .single();
@@ -57,6 +57,7 @@ export function useCreatePrescription(patientId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prescriptions', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['patient_timeline', patientId] });
     },
   });
 }
@@ -75,8 +76,7 @@ export function useUpdatePrescription(patientId: string) {
       const { data, error } = await supabase
         .from('prescription')
         .update({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          details: details as any,
+          details: details as Json,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
@@ -88,6 +88,7 @@ export function useUpdatePrescription(patientId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prescriptions', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['patient_timeline', patientId] });
     },
   });
 }

@@ -65,6 +65,7 @@ export function useCreateLabTest(patientId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lab_tests', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['patient_timeline', patientId] });
     },
   });
 }
@@ -84,7 +85,6 @@ export function useUpdateLabTest(patientId: string) {
       labName?: string | null;
       status?: LabTestStatus;
     }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updates: LabTestUpdate = {
         updated_at: new Date().toISOString(),
       };
@@ -104,6 +104,7 @@ export function useUpdateLabTest(patientId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lab_tests', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['patient_timeline', patientId] });
     },
   });
 }

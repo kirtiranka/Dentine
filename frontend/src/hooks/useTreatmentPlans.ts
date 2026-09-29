@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { TreatmentPlan, TreatmentPlanDetails, TreatmentPlanStatus } from '../types/treatmentPlan';
+import type { Json } from '../types/database.types';
 
 export function useTreatmentPlans(patientId: string | undefined) {
   return useQuery({
@@ -49,8 +50,7 @@ export function useCreateTreatmentPlan(patientId: string) {
           patient_id: patientId,
           doctor_id: doctorId || null,
           status,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          details: details as any,
+          details: details as Json,
         })
         .select()
         .single();
@@ -60,6 +60,7 @@ export function useCreateTreatmentPlan(patientId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['treatment_plans', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['patient_timeline', patientId] });
     },
   });
 }
@@ -81,8 +82,7 @@ export function useUpdateTreatmentPlan(patientId: string) {
         .from('treatment_plan')
         .update({
           status,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          details: details as any,
+          details: details as Json,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
@@ -94,6 +94,7 @@ export function useUpdateTreatmentPlan(patientId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['treatment_plans', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['patient_timeline', patientId] });
     },
   });
 }

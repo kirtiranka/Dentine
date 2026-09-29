@@ -76,6 +76,7 @@ export function useUploadDocument(patientId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['patient_timeline', patientId] });
     },
   });
 }
@@ -109,6 +110,7 @@ export function useUpdateDocument(patientId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['patient_timeline', patientId] });
     },
   });
 }

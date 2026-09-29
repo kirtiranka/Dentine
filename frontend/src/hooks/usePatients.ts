@@ -1,6 +1,7 @@
 import { useQuery , useMutation, useQueryClient} from '@tanstack/react-query';
 import { supabase } from '../lib/supabase'; // Adjust based on your supabase client location
 import type { Patient, PatientDetails } from '../types/patient';
+import type { Json } from '../types/database.types';
 
 export function usePatients() {
   return useQuery({
@@ -53,8 +54,7 @@ export function useUpdatePatient() {
         .from('patient')
         .update({
           name,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          details: details as any,
+          details: details as Json,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)

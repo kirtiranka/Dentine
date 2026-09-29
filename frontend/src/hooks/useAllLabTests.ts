@@ -75,6 +75,7 @@ export function useCreateGlobalLabTest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all_lab_tests'] });
       queryClient.invalidateQueries({ queryKey: ['lab_tests'] });
+      queryClient.invalidateQueries({ queryKey: ['patient_timeline'] });
     },
   });
 }
@@ -94,7 +95,6 @@ export function useUpdateGlobalLabTest() {
       labName?: string | null;
       status?: LabTestStatus;
     }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updates:LabTestUpdate = {
         updated_at: new Date().toISOString(),
       };
@@ -115,6 +115,7 @@ export function useUpdateGlobalLabTest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all_lab_tests'] });
       queryClient.invalidateQueries({ queryKey: ['lab_tests'] });
+      queryClient.invalidateQueries({ queryKey: ['patient_timeline'] });
     },
   });
 }

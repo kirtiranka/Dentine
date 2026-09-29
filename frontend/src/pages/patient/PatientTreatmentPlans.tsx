@@ -139,8 +139,7 @@ const CreatePlanCard: React.FC<{
   const handleStepChange = (
     index: number,
     field: 'procedure_name' | 'teethInput' | 'cost' | 'status',
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    value: any
+    value: unknown
   ) => {
     const updated = [...steps];
     updated[index] = { ...updated[index], [field]: value };

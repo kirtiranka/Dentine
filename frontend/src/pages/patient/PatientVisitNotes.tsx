@@ -278,11 +278,11 @@ const NoteView: React.FC<{
   note: VisitNote;
   onEdit: () => void;
 }> = ({ note, onEdit }) => {
-  const createdFormatted = new Date(note.created_at).toLocaleString('en-US', {
+  const createdFormatted = new Date(note.created_at).toLocaleString('en-IN', {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
-  const updatedFormatted = new Date(note.updated_at).toLocaleString('en-US', {
+  const updatedFormatted = new Date(note.updated_at).toLocaleString('en-IN', {
     dateStyle: 'medium',
     timeStyle: 'short',
   });

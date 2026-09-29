@@ -20,7 +20,7 @@ import { PatientTreatmentPlans } from './pages/patient/PatientTreatmentPlans';
 import { PatientLabTests } from './pages/patient/PatientLabTests';
 import { PatientPrescriptions } from './pages/patient/PatientPrescriptions';
 import { PatientDocuments } from './pages/patient/PatientDocuments';
-import { PatientTimeline} from './pages/patient/PatientSubPages';
+import { PatientTimeline} from './pages/patient/PatientTimeline';
 
 const queryClient = new QueryClient({
   defaultOptions: {
