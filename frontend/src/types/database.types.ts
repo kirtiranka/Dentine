@@ -101,32 +101,44 @@ export type Database = {
         Row: {
           clinic_id: string
           created_at: string
-          details: Json
-          duration_minutes: number
+          doctor_id: string | null
+          end_time: string
           id: string
-          organizer_id: string | null
-          start_datetime: string
+          notes: string | null
+          operatory_number: number
+          patient_id: string
+          start_time: string
           status: string
+          type: string
+          updated_at: string
         }
         Insert: {
           clinic_id: string
           created_at?: string
-          details?: Json
-          duration_minutes?: number
+          doctor_id?: string | null
+          end_time: string
           id?: string
-          organizer_id?: string | null
-          start_datetime: string
+          notes?: string | null
+          operatory_number?: number
+          patient_id: string
+          start_time: string
           status?: string
+          type?: string
+          updated_at?: string
         }
         Update: {
           clinic_id?: string
           created_at?: string
-          details?: Json
-          duration_minutes?: number
+          doctor_id?: string | null
+          end_time?: string
           id?: string
-          organizer_id?: string | null
-          start_datetime?: string
+          notes?: string | null
+          operatory_number?: number
+          patient_id?: string
+          start_time?: string
           status?: string
+          type?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -137,10 +149,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "appointment_organizer_id_fkey"
-            columns: ["organizer_id"]
+            foreignKeyName: "appointment_doctor_id_fkey"
+            columns: ["doctor_id"]
             isOneToOne: false
             referencedRelation: "employee"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient"
             referencedColumns: ["id"]
           },
         ]

@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+@media print {
+  /* 1. Prevent clipping and remove browser-forced margins/footers */
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  /* 2. Force background colors and borders to print (browsers strip them by default to save ink) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 3. Prevent table rows, cards, or signatures from splitting across two pages */
+  tr, .break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* 4. Force a clean page break before specific clinical sections if needed */
+  .page-break-before {
+    break-before: page;
+    page-break-before: always;
+  }
+}

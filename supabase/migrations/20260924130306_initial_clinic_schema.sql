@@ -163,6 +163,7 @@ CREATE TABLE payment (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+
 CREATE TABLE action_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     clinic_id UUID NOT NULL REFERENCES clinic(id) ON DELETE CASCADE,

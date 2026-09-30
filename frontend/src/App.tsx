@@ -6,11 +6,11 @@ import { Layout } from './components/Layout';
 import { AllPatients } from './pages/AllPatients';
 import {
   Dashboard,
-  Calendar,
   Financials,
   Admin,
   // PatientProfile,
 } from './pages/Shells';
+import { CalendarPage } from './pages/Calendar';
 import { LabTests } from './pages/LabTests';
 import { Prescriptions } from './pages/Prescriptions';
 import { PatientPage } from './pages/PatientPage';
@@ -21,6 +21,7 @@ import { PatientLabTests } from './pages/patient/PatientLabTests';
 import { PatientPrescriptions } from './pages/patient/PatientPrescriptions';
 import { PatientDocuments } from './pages/patient/PatientDocuments';
 import { PatientTimeline} from './pages/patient/PatientTimeline';
+import { PatientPayments } from './pages/patient/PatientPayments';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,7 +48,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
-            <Route path="calendar" element={<Calendar />} />
+            <Route path="calendar" element={<CalendarPage />} />
             <Route path="patients" element={<AllPatients />} />
             <Route path="patients/:id" element={<PatientPage />} >
               <Route index element={<Navigate to="details" replace />} />
@@ -58,6 +59,7 @@ export default function App() {
               <Route path="lab-tests" element={<PatientLabTests />} />
               <Route path="prescriptions" element={<PatientPrescriptions />} />
               <Route path="documents" element={<PatientDocuments />} />
+              <Route path="payments" element={<PatientPayments />} />
             </Route>
             <Route path="lab-tests" element={<LabTests />} />
             <Route path="prescriptions" element={<Prescriptions />} />

@@ -10,6 +10,7 @@ const patientTabs = [
   { label: 'Lab Tests', path: 'lab-tests' },
   { label: 'Prescriptions', path: 'prescriptions' },
   { label: 'Documents', path: 'documents' },
+  { label: 'Payments', path: 'payments' },
 ];
 
 export const PatientPage: React.FC = () => {
