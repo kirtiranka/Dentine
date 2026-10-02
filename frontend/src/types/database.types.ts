@@ -373,15 +373,106 @@ export type Database = {
           },
         ]
       }
+      lab: {
+        Row: {
+          address: string | null
+          clinic_id: string
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          clinic_id: string
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          clinic_id?: string
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinic"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_procedure: {
+        Row: {
+          clinic_id: string
+          cost: number
+          created_at: string
+          estimated_turnaround_days: number
+          id: string
+          lab_id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          cost?: number
+          created_at?: string
+          estimated_turnaround_days?: number
+          id?: string
+          lab_id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          cost?: number
+          created_at?: string
+          estimated_turnaround_days?: number
+          id?: string
+          lab_id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_procedure_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_procedure_lab_id_fkey"
+            columns: ["lab_id"]
+            isOneToOne: false
+            referencedRelation: "lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_test: {
         Row: {
           clinic_id: string
           created_at: string
           doctor_id: string | null
           id: string
-          lab_name: string | null
+          lab_procedure_id: string
           patient_id: string
-          procedure: string
           status: string
           updated_at: string
         }
@@ -390,9 +481,8 @@ export type Database = {
           created_at?: string
           doctor_id?: string | null
           id?: string
-          lab_name?: string | null
+          lab_procedure_id: string
           patient_id: string
-          procedure: string
           status?: string
           updated_at?: string
         }
@@ -401,9 +491,8 @@ export type Database = {
           created_at?: string
           doctor_id?: string | null
           id?: string
-          lab_name?: string | null
+          lab_procedure_id?: string
           patient_id?: string
-          procedure?: string
           status?: string
           updated_at?: string
         }
@@ -420,6 +509,13 @@ export type Database = {
             columns: ["doctor_id"]
             isOneToOne: false
             referencedRelation: "employee"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_test_lab_procedure_id_fkey"
+            columns: ["lab_procedure_id"]
+            isOneToOne: false
+            referencedRelation: "lab_procedure"
             referencedColumns: ["id"]
           },
           {
@@ -610,6 +706,63 @@ export type Database = {
             columns: ["clinic_id"]
             isOneToOne: false
             referencedRelation: "clinic"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reminder: {
+        Row: {
+          asof_datetime: string
+          clinic_id: string
+          created_at: string
+          details: Json
+          due_at: string
+          employee_id: string | null
+          id: string
+          remind_in_days: number
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          asof_datetime: string
+          clinic_id: string
+          created_at?: string
+          details?: Json
+          due_at: string
+          employee_id?: string | null
+          id?: string
+          remind_in_days?: number
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          asof_datetime?: string
+          clinic_id?: string
+          created_at?: string
+          details?: Json
+          due_at?: string
+          employee_id?: string | null
+          id?: string
+          remind_in_days?: number
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee"
             referencedColumns: ["id"]
           },
         ]

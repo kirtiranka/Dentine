@@ -1,9 +1,9 @@
 import React from 'react';
 import { useParams, NavLink, Outlet, Link } from 'react-router-dom';
-import { usePatient } from '../hooks/usePatients';
+import { usePatient } from '../../hooks/usePatients';
 
 const patientTabs = [
-  { label: 'Details', path: 'details' },
+  { label: 'Details', path: '' },
   { label: 'Timeline', path: 'timeline' },
   { label: 'Visit Notes', path: 'visit-notes' },
   { label: 'Treatment Plans', path: 'treatment-plans' },
